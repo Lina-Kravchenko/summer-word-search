@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Summer Word Search — Payop Summer Camp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sand:#FFFBF3;
+    --sand-deep:#EAF2FD;
+    --coral:#FF8F1C;
+    --coral-dark:#FC4C02;
+    --ocean:#1C51FB;
+    --ocean-dark:#151F6D;
+    --sun:#FFB25B;
+    --navy:#151F6D;
+    --emerald:#26D07C;
+    --pigment-green:#00A74A;
+    --violet:#731DD8;
+    --phlox:#DA1BEF;
+    --wisteria:#AD96DC;
+    --jordy:#92C1E9;
+    --white:#FFFFFF;
+    --shadow: 6px 6px 0 rgba(21,31,109,0.10);
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 8% 12%, rgba(146,193,233,0.40), transparent 40%),
+      radial-gradient(circle at 92% 85%, rgba(173,150,220,0.30), transparent 45%),
+      var(--sand);
+    font-family:'Poppins', sans-serif;
+    color:var(--navy);
+    display:flex;
+    justify-content:center;
+    padding: 28px 16px 60px;
+  }
+
+  .wrap{
+    width:100%;
+    max-width:920px;
+  }
+
+  header{
+    text-align:center;
+    margin-bottom:22px;
+  }
+
+  .eyebrow{
+    display:inline-block;
+    font-family:'Poppins',sans-serif;
+    font-weight:600;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    font-size:12px;
+    color:var(--ocean-dark);
+    background:var(--white);
+    border:2px solid var(--ocean);
+    padding:6px 14px;
+    border-radius:999px;
+    margin-bottom:14px;
+  }
+
+  h1{
+    font-family:'Baloo 2', cursive;
+    font-weight:800;
+    font-size:clamp(34px, 6vw, 56px);
+    margin:0 0 6px;
+    color:var(--ocean);
+    text-shadow: 3px 3px 0 rgba(21,31,109,0.08);
+    line-height:1.05;
+  }
+
+  h1 .accent{ color:var(--coral-dark); }
+
+  .subtitle{
+    font-size:15px;
+    color:var(--navy);
+    opacity:0.75;
+    max-width:520px;
+    margin:0 auto;
+  }
+
+  .board{
+    display:flex;
+    gap:28px;
+    flex-wrap:wrap;
+    align-items:flex-start;
+    justify-content:center;
+  }
+
+  .panel{
+    background:var(--white);
+    border-radius:22px;
+    box-shadow: var(--shadow);
+    border:2px solid rgba(21,31,109,0.06);
+    padding:20px;
+  }
+
+  #grid-panel{ flex: 1 1 480px; max-width:520px; }
+
+  #grid{
+    position:relative;
+    display:grid;
+    gap:2px;
+    user-select:none;
+    touch-action:none;
+    aspect-ratio:1/1;
+  }
+
+  .cell{
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Baloo 2', cursive;
+    font-weight:700;
+    font-size:clamp(13px, 2.6vw, 19px);
+    background:transparent;
+    cursor:pointer;
+    z-index:2;
+    transition: transform .08s ease;
+  }
+
+  .cell.selecting::before{
+    content:'';
+    position:absolute;
+    inset: -2px;
+    background:var(--sun);
+    border-radius:50%;
+    opacity:0.85;
+    z-index:-1;
+  }
+
+  .cell.selecting{
+    transform: scale(1.05);
+  }
+
+  .cell.found{
+    font-weight:800;
+  }
+
+  .circle-mark{
+    position:absolute;
+    box-sizing:border-box;
+    border: 2.5px solid var(--navy);
+    border-radius:999px;
+    pointer-events:none;
+    z-index:1;
+    animation: pop-in .22s ease-out;
+  }
+
+  @keyframes pop-in{
+    from{ transform: scale(0.8) rotate(var(--rot, 0deg)); opacity:0; }
+    to{ transform: scale(1) rotate(var(--rot, 0deg)); opacity:1; }
+  }
+
+  .side{
+    flex: 1 1 220px;
+    max-width:260px;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+
+  .stat-row{
+    display:flex;
+    gap:10px;
+  }
+
+  .stat{
+    flex:1;
+    background:var(--white);
+    border-radius:16px;
+    box-shadow:var(--shadow);
+    padding:12px 14px;
+    text-align:center;
+  }
+
+  .stat .num{
+    font-family:'Baloo 2', cursive;
+    font-weight:700;
+    font-size:24px;
+    color:var(--coral-dark);
+  }
+
+  .stat .lbl{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    opacity:0.65;
+  }
+
+  #word-list{
+    list-style:none;
+    margin:0;
+    padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+
+  #word-list li{
+    font-family:'Poppins',sans-serif;
+    font-weight:600;
+    font-size:15px;
+    padding:9px 12px;
+    border-radius:10px;
+    background:var(--sand-deep);
+    display:flex;
+    align-items:center;
+    gap:8px;
+    letter-spacing:0.03em;
+    transition: background .2s ease, color .2s ease;
+  }
+
+  #word-list li .dot{
+    width:9px; height:9px; border-radius:50%;
+    background:var(--ocean);
+    flex-shrink:0;
+  }
+
+  #word-list li.found{
+    background: linear-gradient(90deg, var(--emerald), var(--pigment-green));
+    color:var(--white);
+    text-decoration: line-through;
+    opacity:0.9;
+  }
+
+  #word-list li.found .dot{ background:var(--sun); }
+
+  button#reset{
+    font-family:'Poppins',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    color:var(--white);
+    background:var(--coral);
+    border:none;
+    border-radius:12px;
+    padding:12px 16px;
+    cursor:pointer;
+    box-shadow: 4px 4px 0 rgba(21,31,109,0.15);
+    transition: transform .08s ease;
+  }
+  button#reset:hover{ background:var(--coral-dark); }
+  button#reset:active{ transform: translateY(2px); box-shadow: 2px 2px 0 rgba(21,31,109,0.15); }
+
+  #win-banner{
+    display:none;
+    text-align:center;
+    font-family:'Baloo 2', cursive;
+    font-weight:700;
+    font-size:20px;
+    color:var(--pigment-green);
+    background: linear-gradient(90deg, #EAF2FD, #F3ECFB);
+    border:2px dashed var(--ocean);
+    border-radius:16px;
+    padding:16px;
+    margin-top:20px;
+  }
+
+  #setup-banner{
+    display:none;
+    max-width:920px;
+    margin:0 auto 16px;
+    background:#FFF4E6;
+    border:2px dashed var(--coral);
+    border-radius:14px;
+    padding:12px 16px;
+    font-size:13px;
+    line-height:1.5;
+  }
+  #setup-banner code{
+    background:rgba(21,31,109,0.08);
+    padding:1px 5px;
+    border-radius:5px;
+  }
+
+  #grid-panel{ position:relative; overflow:hidden; }
+
+  #grid-panel.locked #grid{
+    filter: blur(3px);
+    opacity:0.45;
+    pointer-events:none;
+  }
+
+  #name-gate{
+    position:absolute;
+    inset:0;
+    z-index:20;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    text-align:center;
+    padding:24px;
+    background:rgba(255,255,255,0.9);
+    backdrop-filter: blur(2px);
+    border-radius:22px;
+  }
+
+  #name-gate .gate-emoji{ font-size:34px; }
+
+  #name-gate h2{
+    font-family:'Baloo 2', cursive;
+    color:var(--ocean);
+    margin:0;
+    font-size:22px;
+  }
+
+  #name-gate p{
+    max-width:340px;
+    font-size:13.5px;
+    opacity:0.8;
+    margin:0;
+  }
+
+  #player-name{
+    font-family:'Poppins', sans-serif;
+    font-size:15px;
+    padding:10px 14px;
+    border-radius:10px;
+    border:2px solid var(--sand-deep);
+    outline:none;
+    width:220px;
+    max-width:80%;
+    text-align:center;
+  }
+  #player-name:focus{ border-color:var(--ocean); }
+
+  button#start-attempt{
+    font-family:'Poppins',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    color:var(--white);
+    background:var(--coral);
+    border:none;
+    border-radius:12px;
+    padding:11px 20px;
+    cursor:pointer;
+    box-shadow: 4px 4px 0 rgba(21,31,109,0.15);
+  }
+  button#start-attempt:hover{ background:var(--coral-dark); }
+
+  #gate-message{
+    min-height:18px;
+    font-size:13px;
+    font-weight:600;
+    color:var(--coral-dark);
+    max-width:320px;
+  }
+
+  #leaderboard-panel{ padding:20px; margin-top:24px; }
+
+  .lb-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-family:'Baloo 2', cursive;
+    font-weight:700;
+    font-size:17px;
+    color:var(--navy);
+    margin-bottom:14px;
+  }
+
+  .lb-status{
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:0.04em;
+    color:var(--pigment-green);
+  }
+
+  #leaderboard-list{
+    list-style:none;
+    margin:0;
+    padding:0;
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap:8px;
+    max-height:360px;
+    overflow-y:auto;
+  }
+
+  .lb-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:7px 9px;
+    border-radius:10px;
+    background:var(--sand-deep);
+    font-size:13px;
+    font-weight:600;
+  }
+
+  .lb-row .lb-rank{
+    width:20px; height:20px;
+    flex-shrink:0;
+    border-radius:50%;
+    background:var(--white);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:11px;
+    color:var(--navy);
+  }
+
+  .lb-row .lb-name{
+    flex:1;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  .lb-row .lb-time{
+    font-variant-numeric: tabular-nums;
+    opacity:0.85;
+  }
+
+  .lb-row.rank-1{ background:linear-gradient(90deg,#FFE3B8,#FFF3DE); }
+  .lb-row.rank-1 .lb-rank{ background:var(--coral); color:var(--white); }
+  .lb-row.rank-2{ background:linear-gradient(90deg,#E9F2FD,#F5F9FE); }
+  .lb-row.rank-2 .lb-rank{ background:var(--ocean); color:var(--white); }
+  .lb-row.rank-3{ background:linear-gradient(90deg,#F1EAFB,#F8F4FD); }
+  .lb-row.rank-3 .lb-rank{ background:var(--violet); color:var(--white); }
+
+  .lb-row.me{ outline:2px solid var(--ocean); }
+
+  .lb-empty{
+    font-size:12.5px;
+    opacity:0.6;
+    text-align:center;
+    padding:10px 0;
+    list-style:none;
+    grid-column: 1 / -1;
+  }
+
+  footer{
+    text-align:center;
+    margin-top:30px;
+    font-size:12px;
+    opacity:0.5;
+  }
+
+  @media (max-width:640px){
+    .board{ flex-direction:column; align-items:stretch; }
+    .side{ max-width:none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="eyebrow">Payop Summer Camp</span>
+    <h1>Summer <span class="accent">Word Search</span></h1>
+    <p class="subtitle">Find all 10 hidden summer words. Words run left-to-right, right-to-left, top-to-bottom, or bottom-to-top — no diagonals. Each participant gets one attempt — your time goes straight to the live leaderboard.</p>
+  </header>
+
+  <div id="setup-banner">
+    ⚠️ <b>Leaderboard setup needed:</b> this page is running in local-only demo mode. To make the leaderboard live and shared across everyone's devices, open the HTML file, find <code>firebaseConfig</code> near the bottom, and paste in your free Firebase Realtime Database credentials. Until then, scores only save on this device.
+  </div>
+
+  <div class="board">
+    <div class="panel" id="grid-panel">
+      <div id="grid"></div>
+
+      <div id="name-gate">
+        <div class="gate-emoji">🏖️</div>
+        <h2>Ready to play?</h2>
+        <p>Enter your name to start your one and only attempt. Your time is saved straight to the live leaderboard for everyone to see.</p>
+        <input id="player-name" type="text" placeholder="Your name" maxlength="24" autocomplete="off" />
+        <button id="start-attempt">Start my attempt</button>
+        <div id="gate-message"></div>
+      </div>
+    </div>
+
+    <div class="side">
+      <div class="stat-row">
+        <div class="stat">
+          <div class="num" id="stat-found">0/10</div>
+          <div class="lbl">Found</div>
+        </div>
+        <div class="stat">
+          <div class="num" id="stat-time">00:00</div>
+          <div class="lbl">Time</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <ul id="word-list"></ul>
+      </div>
+
+      <div id="win-banner">🏖️ All words found! Great job, camper!</div>
+    </div>
+  </div>
+
+  <div class="panel" id="leaderboard-panel">
+    <div class="lb-header">
+      <span>🏆 Leaderboard</span>
+      <span class="lb-status" id="lb-status">● connecting…</span>
+    </div>
+    <ol id="leaderboard-list"></ol>
+  </div>
+
+  <footer>Payop Summer Camp · Summer Word Search</footer>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  // ====================================================================
+  // SETUP: create a free Firebase project (firebase.google.com/console),
+  // enable "Realtime Database" in test mode, then paste its config below.
+  // This is what makes the leaderboard shared and live for every player,
+  // instead of saved only on one device.
+  // ====================================================================
+  const firebaseConfig = {
+    apiKey: "PASTE_YOUR_API_KEY",
+    databaseURL: "https://PASTE_YOUR_PROJECT-default-rtdb.firebaseio.com",
+    projectId: "PASTE_YOUR_PROJECT_ID"
+  };
+  // ====================================================================
+
+  var isConfigured = firebaseConfig.apiKey && firebaseConfig.apiKey.indexOf("PASTE_") === -1;
+
+  window.Leaderboard = { ready:false, configured:isConfigured, entries:{} };
+
+  function notify(){
+    window.Leaderboard.ready = true;
+    window.dispatchEvent(new CustomEvent('leaderboard-update'));
+  }
+
+  if (isConfigured){
+    var app = initializeApp(firebaseConfig);
+    var db = getDatabase(app);
+    var entriesRef = ref(db, 'summerWordSearch/entries');
+
+    onValue(entriesRef, function(snapshot){
+      window.Leaderboard.entries = snapshot.val() || {};
+      notify();
+    });
+
+    window.Leaderboard.submit = function(name, seconds){
+      // push() creates a brand-new unique key for every attempt, so
+      // simultaneous players never overwrite each other's results.
+      return push(entriesRef, { name: name, seconds: seconds, ts: Date.now() });
+    };
+  } else {
+    // Local-only fallback so the file still works before Firebase is set up.
+    // Scores only persist on this one device/browser in this mode.
+    var LOCAL_KEY = 'sws_entries_local';
+    function loadLocal(){
+      try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '{}'); } catch(e){ return {}; }
+    }
+    window.Leaderboard.entries = loadLocal();
+    window.Leaderboard.submit = function(name, seconds){
+      var all = loadLocal();
+      var key = 'local_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+      all[key] = { name: name, seconds: seconds, ts: Date.now() };
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(all));
+      window.Leaderboard.entries = all;
+      notify();
+    };
+    notify();
+  }
+</script>
+
+<script>
+(function(){
+  var WORDS = ["BEACH","SUNSHINE","VACATION","SWIMMING","PICNIC","SANDALS","SUNSET","BARBECUE","SURFING","LEMONADE"];
+  var SIZE = 13;
+
+  var LETTER_COLORS = ["#1C51FB","#26D07C","#00A74A","#ED6CFF","#DA1BEF","#AD96DC","#731DD8","#FFB25B","#FF8F1C","#FF9D6E","#FC4C02","#92C1E9"];
+
+  var grid = [];
+  var cellColors = [];
+  var placements = []; // {word, cells:[[r,c],...]}
+  var foundWords = {};
+  var timerInterval = null;
+  var seconds = 0;
+  var isSelecting = false;
+  var selectionCells = [];
+  var startCell = null;
+
+  var gridEl = document.getElementById('grid');
+  var wordListEl = document.getElementById('word-list');
+  var statFoundEl = document.getElementById('stat-found');
+  var statTimeEl = document.getElementById('stat-time');
+  var winBanner = document.getElementById('win-banner');
+  var gridPanelEl = document.getElementById('grid-panel');
+  var nameGateEl = document.getElementById('name-gate');
+  var playerNameInput = document.getElementById('player-name');
+  var startAttemptBtn = document.getElementById('start-attempt');
+  var gateMessageEl = document.getElementById('gate-message');
+  var leaderboardListEl = document.getElementById('leaderboard-list');
+  var lbStatusEl = document.getElementById('lb-status');
+  var setupBannerEl = document.getElementById('setup-banner');
+
+  var playerName = null;
+  var officialRun = false;
+  var scoreSubmitted = false;
+
+  function emptyGrid(){
+    var g = [];
+    for (var r=0;r<SIZE;r++){
+      var row = [];
+      for (var c=0;c<SIZE;c++) row.push(null);
+      g.push(row);
+    }
+    return g;
+  }
+
+  function tryPlaceWord(word, dirsToTry){
+    var attempts = 300;
+    while (attempts-- > 0){
+      var dir = dirsToTry[Math.floor(Math.random()*dirsToTry.length)];
+      var len = word.length;
+      var r0 = Math.floor(Math.random()*SIZE);
+      var c0 = Math.floor(Math.random()*SIZE);
+      var endR = r0 + dir.dr*(len-1);
+      var endC = c0 + dir.dc*(len-1);
+      if (endR < 0 || endR >= SIZE || endC < 0 || endC >= SIZE) continue;
+
+      var cells = [];
+      var ok = true;
+      for (var i=0;i<len;i++){
+        var r = r0 + dir.dr*i;
+        var c = c0 + dir.dc*i;
+        var existing = grid[r][c];
+        if (existing !== null && existing !== word[i]){ ok = false; break; }
+        cells.push([r,c]);
+      }
+      if (!ok) continue;
+
+      for (var i=0;i<len;i++){
+        grid[cells[i][0]][cells[i][1]] = word[i];
+      }
+      return cells;
+    }
+    return null;
+  }
+
+  function buildPuzzle(){
+    var HORIZONTAL = [{dr:0,dc:1},{dr:0,dc:-1}];
+    var VERTICAL = [{dr:1,dc:0},{dr:-1,dc:0}];
+
+    var success = false;
+    var tries = 0;
+    while(!success && tries < 60){
+      tries++;
+      grid = emptyGrid();
+      placements = [];
+      var order = WORDS.slice().sort(function(){ return Math.random()-0.5; });
+      var axisUsage = {h:0, v:0};
+      success = true;
+      for (var i=0;i<order.length;i++){
+        // favor whichever axis has been used less so far, so words don't
+        // cluster into one direction (e.g. all vertical); tie -> coin flip
+        var preferH = axisUsage.h < axisUsage.v || (axisUsage.h === axisUsage.v && Math.random() < 0.5);
+        var primary = preferH ? HORIZONTAL : VERTICAL;
+        var secondary = preferH ? VERTICAL : HORIZONTAL;
+
+        var cells = tryPlaceWord(order[i], primary);
+        var usedAxis = preferH ? 'h' : 'v';
+        if (!cells){
+          // couldn't fit on the preferred axis this time, fall back to the other
+          cells = tryPlaceWord(order[i], secondary);
+          usedAxis = preferH ? 'v' : 'h';
+        }
+        if (!cells){ success = false; break; }
+        axisUsage[usedAxis]++;
+        placements.push({word:order[i], cells:cells});
+      }
+    }
+    // fill remaining with random letters
+    var LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    for (var r=0;r<SIZE;r++){
+      for (var c=0;c<SIZE;c++){
+        if (grid[r][c] === null){
+          grid[r][c] = LETTERS[Math.floor(Math.random()*LETTERS.length)];
+        }
+      }
+    }
+
+    // assign a random ink color to every letter, purely decorative
+    cellColors = [];
+    for (var r=0;r<SIZE;r++){
+      var row = [];
+      for (var c=0;c<SIZE;c++){
+        row.push(LETTER_COLORS[Math.floor(Math.random()*LETTER_COLORS.length)]);
+      }
+      cellColors.push(row);
+    }
+  }
+
+  function cellKey(r,c){ return r+'_'+c; }
+
+  function renderGrid(){
+    gridEl.style.gridTemplateColumns = 'repeat(' + SIZE + ', 1fr)';
+    gridEl.innerHTML = '';
+    for (var r=0;r<SIZE;r++){
+      for (var c=0;c<SIZE;c++){
+        var div = document.createElement('div');
+        div.className = 'cell';
+        div.textContent = grid[r][c];
+        div.style.color = cellColors[r][c];
+        div.dataset.r = r;
+        div.dataset.c = c;
+        gridEl.appendChild(div);
+      }
+    }
+  }
+
+  function renderWordList(){
+    wordListEl.innerHTML = '';
+    WORDS.forEach(function(w){
+      var li = document.createElement('li');
+      li.dataset.word = w;
+      li.innerHTML = '<span class="dot"></span>' + w;
+      if (foundWords[w]) li.classList.add('found');
+      wordListEl.appendChild(li);
+    });
+  }
+
+  function cellDiv(r,c){
+    return gridEl.children[r*SIZE + c];
+  }
+
+  function clearSelectingClass(){
+    selectionCells.forEach(function(rc){
+      var d = cellDiv(rc[0], rc[1]);
+      if (d && !d.classList.contains('found')) d.classList.remove('selecting');
+    });
+  }
+
+  function lineCellsBetween(a, b){
+    // returns array of [r,c] in a straight horizontal or vertical line between a and b, inclusive
+    var dr = b[0]-a[0];
+    var dc = b[1]-a[1];
+    if (dr !== 0 && dc !== 0) return null; // not straight
+    var len = Math.max(Math.abs(dr), Math.abs(dc)) + 1;
+    var stepR = dr === 0 ? 0 : (dr > 0 ? 1 : -1);
+    var stepC = dc === 0 ? 0 : (dc > 0 ? 1 : -1);
+    var cells = [];
+    for (var i=0;i<len;i++){
+      cells.push([a[0]+stepR*i, a[1]+stepC*i]);
+    }
+    return cells;
+  }
+
+  function wordFromCells(cells){
+    return cells.map(function(rc){ return grid[rc[0]][rc[1]]; }).join('');
+  }
+
+  function checkSelection(cells){
+    var straight = wordFromCells(cells);
+    var reversed = straight.split('').reverse().join('');
+    for (var i=0;i<placements.length;i++){
+      var p = placements[i];
+      if (foundWords[p.word]) continue;
+      if (p.cells.length !== cells.length) continue;
+      var target = wordFromCells(p.cells);
+      if (target === straight || target === reversed){
+        // confirm same cell set (order independent match not required; must be exact path)
+        var same = p.cells.every(function(pc, idx){
+          return (pc[0]===cells[idx][0] && pc[1]===cells[idx][1]);
+        });
+        var sameRev = p.cells.slice().reverse().every(function(pc, idx){
+          return (pc[0]===cells[idx][0] && pc[1]===cells[idx][1]);
+        });
+        if (same || sameRev){
+          return p.word;
+        }
+      }
+    }
+    return null;
+  }
+
+  function drawCircleMark(cells){
+    var first = cellDiv(cells[0][0], cells[0][1]);
+    var last = cellDiv(cells[cells.length-1][0], cells[cells.length-1][1]);
+    var left = Math.min(first.offsetLeft, last.offsetLeft);
+    var top = Math.min(first.offsetTop, last.offsetTop);
+    var right = Math.max(first.offsetLeft + first.offsetWidth, last.offsetLeft + last.offsetWidth);
+    var bottom = Math.max(first.offsetTop + first.offsetHeight, last.offsetTop + last.offsetHeight);
+    var pad = Math.max(4, first.offsetWidth * 0.18);
+
+    var mark = document.createElement('div');
+    mark.className = 'circle-mark';
+    mark.style.left = (left - pad) + 'px';
+    mark.style.top = (top - pad) + 'px';
+    mark.style.width = (right - left + pad * 2) + 'px';
+    mark.style.height = (bottom - top + pad * 2) + 'px';
+    var rot = (Math.random() * 6 - 3).toFixed(1);
+    mark.style.setProperty('--rot', rot + 'deg');
+    mark.style.transform = 'rotate(' + rot + 'deg)';
+    gridEl.appendChild(mark);
+  }
+
+  function markFound(word, cells){
+    foundWords[word] = true;
+    cells.forEach(function(rc){
+      var d = cellDiv(rc[0], rc[1]);
+      d.classList.remove('selecting');
+      d.classList.add('found');
+    });
+    drawCircleMark(cells);
+    var li = wordListEl.querySelector('li[data-word="'+word+'"]');
+    if (li) li.classList.add('found');
+    updateStats();
+    checkWin();
+  }
+
+  function updateStats(){
+    var count = Object.keys(foundWords).length;
+    statFoundEl.textContent = count + '/' + WORDS.length;
+  }
+
+  function checkWin(){
+    if (Object.keys(foundWords).length === WORDS.length){
+      stopTimer();
+      winBanner.style.display = 'block';
+      if (officialRun && playerName && !scoreSubmitted){
+        scoreSubmitted = true;
+        submitScore(playerName, seconds);
+      }
+    }
+  }
+
+  function startTimer(){
+    stopTimer();
+    seconds = 0;
+    statTimeEl.textContent = '00:00';
+    timerInterval = setInterval(function(){
+      seconds++;
+      var m = Math.floor(seconds/60).toString().padStart(2,'0');
+      var s = (seconds%60).toString().padStart(2,'0');
+      statTimeEl.textContent = m + ':' + s;
+    }, 1000);
+  }
+
+  function stopTimer(){
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = null;
+  }
+
+  function getCellFromPoint(clientX, clientY){
+    var el = document.elementFromPoint(clientX, clientY);
+    if (!el || !el.classList.contains('cell')) return null;
+    return [parseInt(el.dataset.r,10), parseInt(el.dataset.c,10)];
+  }
+
+  function onSelectStart(r,c){
+    isSelecting = true;
+    startCell = [r,c];
+    selectionCells = [[r,c]];
+    cellDiv(r,c).classList.add('selecting');
+  }
+
+  function onSelectMove(r,c){
+    if (!isSelecting) return;
+    var line = lineCellsBetween(startCell, [r,c]);
+    if (!line) return;
+    clearSelectingClass();
+    selectionCells = line;
+    line.forEach(function(rc){
+      cellDiv(rc[0], rc[1]).classList.add('selecting');
+    });
+  }
+
+  function onSelectEnd(){
+    if (!isSelecting) return;
+    isSelecting = false;
+    if (selectionCells.length > 1){
+      var match = checkSelection(selectionCells);
+      if (match){
+        markFound(match, selectionCells);
+      } else {
+        clearSelectingClass();
+      }
+    } else {
+      clearSelectingClass();
+    }
+    selectionCells = [];
+    startCell = null;
+  }
+
+  // Mouse events
+  gridEl.addEventListener('mousedown', function(e){
+    var el = e.target.closest('.cell');
+    if (!el) return;
+    onSelectStart(parseInt(el.dataset.r,10), parseInt(el.dataset.c,10));
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', function(e){
+    if (!isSelecting) return;
+    var rc = getCellFromPoint(e.clientX, e.clientY);
+    if (rc) onSelectMove(rc[0], rc[1]);
+  });
+  document.addEventListener('mouseup', function(){
+    onSelectEnd();
+  });
+
+  // Touch events
+  gridEl.addEventListener('touchstart', function(e){
+    var t = e.touches[0];
+    var el = document.elementFromPoint(t.clientX, t.clientY);
+    if (!el || !el.classList.contains('cell')) return;
+    onSelectStart(parseInt(el.dataset.r,10), parseInt(el.dataset.c,10));
+    e.preventDefault();
+  }, {passive:false});
+  gridEl.addEventListener('touchmove', function(e){
+    if (!isSelecting) return;
+    var t = e.touches[0];
+    var rc = getCellFromPoint(t.clientX, t.clientY);
+    if (rc) onSelectMove(rc[0], rc[1]);
+    e.preventDefault();
+  }, {passive:false});
+  gridEl.addEventListener('touchend', function(e){
+    onSelectEnd();
+    e.preventDefault();
+  }, {passive:false});
+
+  function newGame(startTimerNow){
+    foundWords = {};
+    winBanner.style.display = 'none';
+    buildPuzzle();
+    renderGrid();
+    renderWordList();
+    updateStats();
+    if (startTimerNow) startTimer();
+  }
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, function(ch){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+    });
+  }
+
+  function formatTime(secs){
+    var m = Math.floor(secs/60).toString().padStart(2,'0');
+    var s = Math.floor(secs%60).toString().padStart(2,'0');
+    return m + ':' + s;
+  }
+
+  function findEntryByName(name){
+    var entries = (window.Leaderboard && window.Leaderboard.entries) || {};
+    var lower = name.trim().toLowerCase();
+    for (var k in entries){
+      if (entries[k] && entries[k].name && entries[k].name.trim().toLowerCase() === lower){
+        return entries[k];
+      }
+    }
+    return null;
+  }
+
+  function renderLeaderboard(){
+    if (!window.Leaderboard) return;
+    lbStatusEl.textContent = window.Leaderboard.configured ? '● live' : '● local only';
+    lbStatusEl.style.color = window.Leaderboard.configured ? 'var(--pigment-green)' : 'var(--coral-dark)';
+    setupBannerEl.style.display = window.Leaderboard.configured ? 'none' : 'block';
+
+    var entries = window.Leaderboard.entries || {};
+    var list = Object.keys(entries).map(function(k){ return entries[k]; }).filter(Boolean);
+    list.sort(function(a,b){ return a.seconds - b.seconds; });
+
+    leaderboardListEl.innerHTML = '';
+    if (list.length === 0){
+      leaderboardListEl.innerHTML = '<li class="lb-empty">No attempts yet — be the first!</li>';
+      return;
+    }
+    list.forEach(function(entry, idx){
+      var li = document.createElement('li');
+      li.className = 'lb-row rank-' + (idx+1);
+      var isMe = playerName && entry.name && entry.name.trim().toLowerCase() === playerName.trim().toLowerCase();
+      if (isMe) li.classList.add('me');
+      li.innerHTML =
+        '<span class="lb-rank">' + (idx+1) + '</span>' +
+        '<span class="lb-name">' + escapeHtml(entry.name) + '</span>' +
+        '<span class="lb-time">' + formatTime(entry.seconds) + '</span>';
+      leaderboardListEl.appendChild(li);
+    });
+  }
+
+  window.addEventListener('leaderboard-update', renderLeaderboard);
+  if (window.Leaderboard && window.Leaderboard.ready) renderLeaderboard();
+
+  function submitScore(name, secs){
+    try{
+      localStorage.setItem('sws_played_name', name);
+      localStorage.setItem('sws_played_seconds', String(secs));
+    } catch(e){}
+    if (window.Leaderboard && window.Leaderboard.submit){
+      window.Leaderboard.submit(name, secs);
+    }
+  }
+
+  function beginAttempt(){
+    nameGateEl.style.display = 'none';
+    gridPanelEl.classList.remove('locked');
+    scoreSubmitted = false;
+    newGame(true);
+  }
+
+  startAttemptBtn.addEventListener('click', function(){
+    var name = playerNameInput.value.trim();
+    if (!name){
+      gateMessageEl.textContent = 'Please enter your name.';
+      return;
+    }
+    if (!window.Leaderboard || !window.Leaderboard.ready){
+      gateMessageEl.textContent = 'Still connecting… try again in a second.';
+      return;
+    }
+    var existing = findEntryByName(name);
+    if (existing){
+      gateMessageEl.innerHTML = 'Looks like <b>' + escapeHtml(name) + '</b> already played! Time: ' + formatTime(existing.seconds);
+      return;
+    }
+    playerName = name;
+    officialRun = true;
+    beginAttempt();
+  });
+
+  (function prefillReturningPlayer(){
+    try{
+      var storedName = localStorage.getItem('sws_played_name');
+      if (storedName){
+        playerNameInput.value = storedName;
+        gateMessageEl.textContent = 'This device already played as ' + storedName + '. Ask the host to reset your entry if that\'s a mistake.';
+      }
+    } catch(e){}
+  })();
+
+  gridPanelEl.classList.add('locked');
+  newGame(false);
+})();
+</script>
+</body>
+</html>
